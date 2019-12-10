@@ -1,22 +1,16 @@
+// Dependencies
 const express = require('express');
-const logger = require('morgan');
-const mongoose = require('mongoose');
-
-// Our scraping tools
-// Axios is a promised-based http library, similar to jQuery's Ajax method
-// It works on the client and on the server
-const axios = require('axios');
 const cheerio = require('cheerio');
+const axios = require('axios');
+const exphbs = require('express-handlebars');
+const mongoose = require('mongoose');
+const logger = require('morgan');
 
 // Require all models
 const db = require('./models');
 
-const PORT = process.env.PORT || 3000;
-
 // Initialize Express
 const app = express();
-
-// Configure middleware
 
 // Use morgan logger for logging requests
 app.use(logger('dev'));
@@ -26,86 +20,196 @@ app.use(express.json());
 // Make public a static folder
 app.use(express.static('public'));
 
-// Connect to the Mongo DB
-mongoose.connect('mongodb://localhost/unit18Populater', {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true});
+// Initialize Handlebars
+app.engine('handlebars', exphbs({
+  defaultLayout: 'main',
+}));
+app.set('view engine', 'handlebars');
+
+// TODO: will need to host this on heroku eventually
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
+mongoose.connect(MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true});
 
 // Routes
 
-// A GET route for scraping the echoJS website
-app.get('/scrape', async function(req, res) {
-  // First, we grab the body of the html with axios
-  const response = await axios.get('http://www.echojs.com/');
-  // Then, we load that into cheerio and save it to $ for a shorthand selector
-  const $ = cheerio.load(response.data);
+// Route for getting all Articles from the db, returned as JSON
+app.get('/articles-json', function(req, res) {
+  db.Article.find()
+      .then(function(dbArticle) {
+        res.json(dbArticle);
+      })
+      .catch(function(err) {
+        res.json(err);
+      });
+});
 
-  // Now, we grab every h2 within an article tag, and do the following:
-  $('article h2').each(function(i, element) {
-    // Save an empty result object
-    const result = {};
+// Route for getting all unsaved articles and calling index page
+app.get('/articles', function(req, res) {
+  db.Article.find({saved: false}).sort({'_id': -1}).limit(100)
+      .then((articles) => {
+        res.render('index', {article: articles});
+      })
+      .catch(function(err) {
+      // log the error message
+        console.log(err.message);
+      });
+});
 
-    // Add the text and href of every link, and save them as properties of the result object
-    result.title = $(this)
-        .children('a')
-        .text();
-    result.link = $(this)
-        .children('a')
-        .attr('href');
+// Route for scraping articles and then calling index page to display all unsaved articles
+app.get('/scrape', function(req, res) {
+  axios.get('https://www.npr.org/')
+      .then(function(response) {
+      // Load the HTML into cheerio
+        const $ = cheerio.load(response.data);
+        // Cheerio, finds each tag with the 'title' class
+        $('.item-info').each(function(i, element) {
+          const data = {
+            title: $(element).children('h2').text(),
+            link: $(element).children('h2').children('a').attr('href'),
+            summary: $(element).children('p').text(),
+          };
 
-    // Create a new Article using the `result` object built from scraping
-    db.Article.create(result)
-        .then(function(dbArticle) {
-          // View the added result in the console
-          console.log(dbArticle);
-        })
-        .catch(function(err) {
-          // If an error occurred, log it
-          console.log(err);
+          // Saves results to db
+          if (data.title && data.link) {
+          // Saves article to db if an entry doesn't exist
+            db.Article.updateOne({title: data.title}, {$set: data, $setOnInsert: {saved: false}}, {upsert: true})
+                .then(function(dbArticle) {
+                  // If saved successfully, print the new Article document to the console
+                  console.log('Articles sraped');
+                })
+                .catch(function(err) {
+                  // log the error message
+                  console.log(err.message);
+                });
+          }
         });
+      })
+      .then(function() {
+      // gets all unsaved articles from database and pushes to handlebars page
+        db.Article.find({saved: false})
+            .then((articles) => {
+              res.render('index', {article: articles});
+            })
+            .catch(function(err) {
+              // log the error message
+              console.log(err.message);
+            });
+      });
+});
+
+// Clears articles
+app.get('/clearAll', function(req, res) {
+  db.Article.deleteMany({}, function(err, doc) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log('Articles removed');
+    }
   });
-
-  // Send a message to the client
-  res.send('Scrape Complete');
+  res.render('index');
 });
 
-// Route for getting all Articles from the db
-app.get('/api/articles', async function(req, res) {
-  // Grab every document in the Articles collection
-  try {
-    const data = await db.Article.find({});
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({error: {name: err.name, message: err.message}});
-  }
+
+// Route for saving the article
+app.post('/saved/:id', function(req, res) {
+  db.Article.updateOne({_id: req.params.id}, {$set: {saved: true}}, function(err, doc) {
+    if (err) {
+      res.send(err);
+    } else {
+      console.log('Article is saved');
+      res.redirect('/articles');
+    }
+  });
 });
 
-// Route for grabbing a specific Article by id, populate it with it's note
-app.get('/api/articles/:id', async function(req, res) {
-  // Using the id passed in the id parameter, prepare a query that finds the matching one in our db...
-  try {
-    const data = await db.Article.findOne({_id: req.params.id})
-        .populate('note'); // ..and populate all of the notes associated with it
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({error: {name: err.name, message: err.message}});
-  }
+// Route for removing saved articles
+app.post('/remove/:id', function(req, res) {
+  db.Article.updateOne({_id: req.params.id}, {$set: {saved: false}}, function(err, doc) {
+    if (err) {
+      res.send(err);
+    } else {
+      console.log('Article is no longer saved');
+      res.redirect('/saved');
+    }
+  });
 });
 
-// Route for saving/updating an Article's associated Note
-app.post('/api/articles/:id', async function(req, res) {
-  // Create a new note and pass the req.body to the entry
-  try {
-    const dbNote = await db.Note.create(req.body);
-    // If a Note was created successfully, find one Article with an `_id` equal to `req.params.id`.
-    // Update the Article to be associated with the new Note
-    // { new: true } tells the query that we want it to return the updated Article -- it returns the original by default.
-    const dbArticle = await db.Article.findOneAndUpdate({_id: req.params.id}, {note: dbNote._id}, {new: true});
-    res.json(dbArticle);
-  } catch (err) {
-    res.status(500).json({error: {name: err.name, message: err.message}});
-  }
+// Gets saved articles and calls saved handlebars page
+app.get('/saved', function(req, res) {
+  db.Article.find({saved: true}).sort({'_id': -1}).populate('comments')
+      .then((articles) => {
+        res.render('saved', {article: articles});
+      })
+      .catch(function(err) {
+      // log the error message
+        console.log(err.message);
+      });
 });
 
-// Set the app to listen on PORT
+
+// Routes for Comments
+
+// Route for getting a specific Article by id, populate it with it's comment
+app.get('/articles/:id', function(req, res) {
+  db.Article.findOne({_id: req.params.id})
+      .populate('comment') // the key in the article schema
+      .then(function(dbArticle) {
+        res.json(dbArticle);
+      })
+      .catch(function(err) {
+        res.json(err);
+      });
+});
+
+// Route for saving/updating an Article's associated Comment
+app.post('/articlenotes/:id', function(req, res) {
+  // Insert Comments into database
+  db.Comment.create(req.body)
+      .then(function(dbComment) {
+      // Update article document with Comment ID
+        return db.Article.findOneAndUpdate({_id: req.params.id},
+            {
+              $push: {
+                comments: {
+                  $each: [
+                    dbComment._id,
+                  ],
+                  $position: 0,
+                },
+              },
+            },
+            {upsert: true, new: true});
+      })
+      .then(function(dbArticle) {
+        res.redirect('/saved');
+      })
+      .catch(function(err) {
+      // If an error occurred, log it
+        console.log(err);
+      });
+});
+
+// Route for deleting comments
+app.post('/remove/comment/:id', function(req, res) {
+  console.log('remove comment clicked');
+  console.log(req.params.id);
+  db.Comment.remove({_id: req.params.id}, function(err, doc) {
+    if (err) {
+      res.send(err);
+    } else {
+      console.log('comment deleted');
+      res.redirect('/saved');
+    }
+  });
+});
+
+// HTML Route for home page
+app.get('/', function(req, res) {
+  res.redirect('/articles');
+});
+
+// Setup port
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, function() {
-  console.log('App running on http://localhost:%s', PORT);
+  console.log('App running on port ' + PORT);
 });

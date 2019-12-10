@@ -26,5 +26,13 @@
     "eslint-config-google": "^0.14.0",
     "jsdoc": "^3.6.3",
     "nodemon": "^2.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Davidlevens/Mongo-Scraper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Davidlevens/Mongo-Scraper/issues"
+  },
+  "homepage": "https://github.com/Davidlevens/Mongo-Scraper#readme"
 }
