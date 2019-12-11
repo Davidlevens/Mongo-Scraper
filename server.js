@@ -62,11 +62,20 @@ app.get('/scrape', function(req, res) {
       // Load the HTML into cheerio
         const $ = cheerio.load(response.data);
         // Cheerio, finds each tag with the 'title' class
-        $('.item-info').each(function(i, element) {
+        const stories = $('div.story-wrap');
+        stories.each(function(i, element) {
           const data = {
-            title: $(element).children('h2').text(),
-            link: $(element).children('h2').children('a').attr('href'),
-            summary: $(element).children('p').text(),
+            title: $(element)
+                .children('div.story-text')
+                .children('a')
+                .text(),
+            link: $(element)
+                .children('div.story-text')
+                .children('a')
+                .attr('href'),
+            summary: $(element)
+                .children('div.story-text')
+                .last().text(),
           };
 
           // Saves results to db
