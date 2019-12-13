@@ -27,7 +27,7 @@ app.engine('handlebars', exphbs({
 app.set('view engine', 'handlebars');
 
 // TODO: will need to host this on heroku eventually
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost/mongoHeadlines';
 mongoose.connect(MONGODB_URI, {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true});
 
 // Routes
@@ -75,9 +75,11 @@ app.get('/scrape', function(req, res) {
                 .attr('href'),
             summary: $(element)
                 .children('div.story-text')
-                .last().text(),
+                .find('p.teaser').text(),
+            imgSource: $(element)
+                .find('img').attr('src'),
           };
-
+console.log(data);
           // Saves results to db
           if (data.title && data.link) {
           // Saves article to db if an entry doesn't exist

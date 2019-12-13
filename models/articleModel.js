@@ -19,6 +19,9 @@ const ArticleSchema = new Schema({
     trim: true,
     required: 'Link is Required',
   },
+  imgSource: {
+    type: String,
+  },
   saved: {
     type: Boolean,
     default: false,
