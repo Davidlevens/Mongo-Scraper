@@ -5,19 +5,24 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const ArticleSchema = new Schema({
+  slug: {
+    type: String,
+    trim: true,
+    required: 'Slug is Required',
+  },
   title: {
     type: String,
     trim: true,
     required: 'Title is Required',
   },
-  summary: {
-    type: String,
-    trim: true,
-  },
   link: {
     type: String,
     trim: true,
     required: 'Link is Required',
+  },
+  summary: {
+    type: String,
+    trim: true,
   },
   imgSource: {
     type: String,

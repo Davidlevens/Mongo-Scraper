@@ -65,10 +65,14 @@ app.get('/scrape', function(req, res) {
         const stories = $('div.story-wrap');
         stories.each(function(i, element) {
           const data = {
+            slug: $(element)
+                .children('div.story-text')
+                .children('div.slug-wrap')
+                .find('h2').text(),
             title: $(element)
                 .children('div.story-text')
                 .children('a')
-                .text(),
+                .find('h3.title').text(),
             link: $(element)
                 .children('div.story-text')
                 .children('a')

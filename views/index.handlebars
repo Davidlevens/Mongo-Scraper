@@ -4,6 +4,7 @@
     {{#each article}}
       <div class="card">
         <div class = "card-body">
+            <a href="{{this.link}}" class="card-title" target="_blank"><h6>{{this.slug}}</h6></a>
             <a href="{{this.link}}" class="card-title" target="_blank"><h4>{{this.title}}</h4></a>
             <p>{{this.summary}}</p>
             <a href="{{this.link}}" class="card-title" target="_blank"><img src="{{this.imgSource}}"/></a>
