@@ -1,4 +1,15 @@
-body {font-family: Georgia, serif;}
+body {
+    font-family: Georgia, serif;
+}
+
+a.navbar-brand {
+    font-size: 30px;
+}
+
+h3 {
+    font-size: 25px;
+    margin-left: 20px;
+}
 
 .btn {
     margin-right: 20px; 33 you are
