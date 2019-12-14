@@ -9,6 +9,11 @@ a.navbar-brand {
 h3 {
     font-size: 25px;
     margin-left: 20px;
+    margin-top: 1rem;
+}
+
+.card {
+   margin-top: 1rem; 
 }
 
 h6 {
