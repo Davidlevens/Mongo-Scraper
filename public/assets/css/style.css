@@ -1,5 +1,8 @@
 body {
     font-family: Georgia, serif;
+    background-image: url("../img/brandi-redd-aJTiW00qqtI-unsplash.jpg");
+    background-attachment: fixed;
+    background-size: 100%;
 }
 
 a.navbar-brand {
@@ -21,7 +24,11 @@ h6 {
 }
 
 .btn {
-    margin-right: 20px; 33 you are
+    margin-right: 20px;
+}
+
+.modal-dialog {
+    width: 768px;
 }
 
 /* The Modal (background) */
@@ -75,7 +82,9 @@ h6 {
     color: white;
 }
 
-.modal-body {padding: 2px 16px;}
+.modal-body {
+    padding: 2px 16px;}
+
 
 .modal-footer {
     padding: 2px 16px;

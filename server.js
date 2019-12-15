@@ -83,7 +83,7 @@ app.get('/scrape', function(req, res) {
             imgSource: $(element)
                 .find('img').attr('src'),
           };
-console.log(data);
+          console.log(data);
           // Saves results to db
           if (data.title && data.link) {
           // Saves article to db if an entry doesn't exist
@@ -153,6 +153,7 @@ app.post('/remove/:id', function(req, res) {
 app.get('/saved', function(req, res) {
   db.Article.find({saved: true}).sort({'_id': -1}).populate('comments')
       .then((articles) => {
+        console.log(articles)
         res.render('saved', {article: articles});
       })
       .catch(function(err) {
