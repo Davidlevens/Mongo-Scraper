@@ -10,7 +10,7 @@ Feel free to use some or all of this code if you're trying to complete a similar
 
 <h3> App screenshot </h3>
 
-![alt text](https://raw.githubusercontent.com/mjbenefiel/news-scraper/master/public/assets/img/scraper-scraped.png "News Scraper")
+![alt text](https://github.com/Davidlevens/Mongo-Scraper/blob/master/public/assets/img/scraper-scraped.png "News Scraper")
 
 <h2> Project overview</h2>
 This news scraper allows users to scrape news articles from NPR.org. Users can then view and leave comments on saved articles. This app uses Cheerio to scrape news from NPR and stores them in MongoDB using Mongoose. 
